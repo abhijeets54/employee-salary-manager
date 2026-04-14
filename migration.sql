@@ -3,8 +3,10 @@
 -- Run these commands in your Supabase SQL Editor
 -- ============================================================
 
--- Step 1: Add sunday_rate to existing employees
--- (Defaults to 0 so existing employees don't get arbitrary bonuses)
+-- Step 1: Add new columns to existing employees
+-- (Defaults set so existing employees don't break)
+ALTER TABLE employees ADD COLUMN role TEXT NOT NULL DEFAULT 'helper' CHECK (role IN ('main', 'helper'));
+ALTER TABLE employees ADD COLUMN works_sundays BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE employees ADD COLUMN sunday_rate NUMERIC NOT NULL DEFAULT 0;
 
 -- Step 2: Create the deductions table for cash and goods advances

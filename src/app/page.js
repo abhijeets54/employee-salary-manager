@@ -78,7 +78,7 @@ export default function EmployeesPage() {
 
   return (
     <div className="app-shell">
-      <Navbar />
+      <Navbar employees={employees} />
       <div className="app-content page-enter">
         <h1 className="page-title">Employees</h1>
         <p className="page-subtitle">

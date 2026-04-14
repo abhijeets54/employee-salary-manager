@@ -7,6 +7,8 @@ import { supabase } from '@/lib/supabase';
 export default function EmployeeCard({ employee, onUpdate, onDelete }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(employee.name);
+  const [role, setRole] = useState(employee.role || 'helper');
+  const [worksSundays, setWorksSundays] = useState(employee.works_sundays || false);
   const [salary, setSalary] = useState(String(employee.salary));
   const [food, setFood] = useState(String(employee.food_allowance));
   const [sundayRate, setSundayRate] = useState(String(employee.sunday_rate || 0));
@@ -21,9 +23,11 @@ export default function EmployeeCard({ employee, onUpdate, onDelete }) {
       .from('employees')
       .update({
         name: name.trim(),
+        role,
         salary: Number(salary),
         food_allowance: Number(food),
-        sunday_rate: Number(sundayRate) || 0,
+        works_sundays: worksSundays,
+        sunday_rate: worksSundays ? (Number(sundayRate) || 0) : 0,
         updated_at: new Date().toISOString(),
       })
       .eq('id', employee.id);
@@ -32,9 +36,11 @@ export default function EmployeeCard({ employee, onUpdate, onDelete }) {
       onUpdate({
         ...employee,
         name: name.trim(),
+        role,
         salary: Number(salary),
         food_allowance: Number(food),
-        sunday_rate: Number(sundayRate) || 0,
+        works_sundays: worksSundays,
+        sunday_rate: worksSundays ? (Number(sundayRate) || 0) : 0,
       });
       setEditing(false);
     }
@@ -49,6 +55,8 @@ export default function EmployeeCard({ employee, onUpdate, onDelete }) {
 
   const handleCancel = () => {
     setName(employee.name);
+    setRole(employee.role || 'helper');
+    setWorksSundays(employee.works_sundays || false);
     setSalary(String(employee.salary));
     setFood(String(employee.food_allowance));
     setSundayRate(String(employee.sunday_rate || 0));
@@ -69,8 +77,29 @@ export default function EmployeeCard({ employee, onUpdate, onDelete }) {
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Employee name"
-          style={{ marginBottom: '12px' }}
+          style={{ marginBottom: '16px' }}
         />
+        
+        <div style={{ marginBottom: '16px' }}>
+          <label className="field-label" style={{ marginBottom: '8px' }}>Role</label>
+          <div className="deduction-type-toggle" style={{ marginBottom: 0 }}>
+            <button
+              className={`type-btn ${role === 'main' ? 'active' : ''}`}
+              onClick={() => setRole('main')}
+              style={{ padding: '8px 12px', minHeight: '38px' }}
+            >
+              👤 Main Worker
+            </button>
+            <button
+              className={`type-btn ${role === 'helper' ? 'active' : ''}`}
+              onClick={() => setRole('helper')}
+              style={{ padding: '8px 12px', minHeight: '38px' }}
+            >
+              🛠️ Helper
+            </button>
+          </div>
+        </div>
+
         <div className="grid-2" style={{ marginBottom: '12px' }}>
           <div>
             <label className="field-label">Fixed salary (₹/month)</label>
@@ -96,15 +125,25 @@ export default function EmployeeCard({ employee, onUpdate, onDelete }) {
           </div>
         </div>
         <div style={{ marginBottom: '1rem' }}>
-          <label className="field-label">Sunday bonus (₹/Sunday)</label>
-          <input
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            value={sundayRate}
-            onChange={(e) => setSundayRate(e.target.value.replace(/[^0-9]/g, ''))}
-            placeholder="0 = no Sunday bonus"
-          />
+          <label className="field-label" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginBottom: worksSundays ? '12px' : 0 }}>
+            <input 
+              type="checkbox" 
+              checked={worksSundays} 
+              onChange={(e) => setWorksSundays(e.target.checked)} 
+              style={{ width: '18px', minHeight: '18px', margin: 0 }}
+            />
+            Works on Sundays?
+          </label>
+          {worksSundays && (
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={sundayRate}
+              onChange={(e) => setSundayRate(e.target.value.replace(/[^0-9]/g, ''))}
+              placeholder="Sunday bonus (e.g. 700)"
+            />
+          )}
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button className="btn" style={{ flex: 1 }} onClick={handleCancel} disabled={saving}>
@@ -121,12 +160,17 @@ export default function EmployeeCard({ employee, onUpdate, onDelete }) {
   return (
     <div className="card page-enter">
       <div>
-        <p style={{ fontWeight: 600, marginBottom: '4px', fontSize: '16px' }}>
-          {employee.name}
-        </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+          <p style={{ fontWeight: 600, margin: 0, fontSize: '16px' }}>
+            {employee.name}
+          </p>
+          <span className={`deduction-type-badge ${employee.role === 'main' ? 'cash' : 'goods'}`} style={{ opacity: 0.8 }}>
+            {employee.role === 'main' ? 'Main' : 'Helper'}
+          </span>
+        </div>
         <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 0 }}>
           {formatINR(employee.salary)}/month &nbsp;·&nbsp; {formatINR(employee.food_allowance)}/day food
-          {sRate > 0 && (
+          {employee.works_sundays && sRate > 0 && (
             <> &nbsp;·&nbsp; <span style={{ color: 'var(--teal)' }}>{formatINR(sRate)}/Sun</span></>
           )}
         </p>

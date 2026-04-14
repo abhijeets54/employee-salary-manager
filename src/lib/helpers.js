@@ -74,6 +74,21 @@ export function getSundayDates(yearMonth) {
 }
 
 /**
+ * Get the last Monday date string of a given month
+ */
+export function getLastMonday(yearMonth) {
+  if (!yearMonth) return null;
+  const [y, m] = yearMonth.split('-').map(Number);
+  const totalDays = new Date(y, m, 0).getDate();
+  for (let d = totalDays; d >= 1; d--) {
+    if (new Date(y, m - 1, d).getDay() === 1) { // 1 = Monday
+      return `${yearMonth}-${pad(d)}`;
+    }
+  }
+  return null;
+}
+
+/**
  * Count Sundays an employee was present in a month.
  * absentSet is a Set<'YYYY-MM-DD'>
  */
@@ -87,15 +102,39 @@ export function getSundaysPresentCount(yearMonth, absentSet) {
  * deductions = [{ amount, reason, type, deduction_date }, ...]
  */
 export function calculateSalary(employee, absentDates, totalDays, yearMonth, deductions = []) {
-  const absentCount = absentDates.length;
-  const presentCount = totalDays - absentCount;
-  const foodEarned = employee.food_allowance * presentCount;
+  // Last Monday closed calculation
+  const lastMonday = getLastMonday(yearMonth);
+  const sundays = yearMonth ? getSundayDates(yearMonth) : [];
+  
+  // Ensure we don't double count if the employee was mistakenly marked absent on the closed day or Sundays (if they don't work Sundays)
+  let effectiveAbsentDates = absentDates;
+  if (lastMonday) {
+    effectiveAbsentDates = effectiveAbsentDates.filter(d => d !== lastMonday);
+  }
+  if (!employee.works_sundays) {
+    effectiveAbsentDates = effectiveAbsentDates.filter(d => !sundays.includes(d));
+  }
+    
+  const absentCount = effectiveAbsentDates.length;
+  
+  // Rule: food is not given on days they are not expected to work
+  let closedDaysCount = lastMonday ? 1 : 0;
+  let nonWorkingSundaysCount = !employee.works_sundays ? sundays.length : 0;
+  
+  const potentialWorkingDays = totalDays - closedDaysCount - nonWorkingSundaysCount;
+  const foodProvidedDays = potentialWorkingDays - absentCount;
+  
+  const foodEarned = employee.food_allowance * Math.max(0, foodProvidedDays);
+  
+  // These are purely informational for the UI
   const foodCut = employee.food_allowance * absentCount;
+  const lastMondayFoodCut = lastMonday ? employee.food_allowance : 0;
+  const nonWorkingSundayFoodCut = nonWorkingSundaysCount * employee.food_allowance;
 
   // Sunday bonus calculation
-  const absentSet = new Set(absentDates);
-  const sundayRate = Number(employee.sunday_rate) || 0;
-  const sundaysPresentCount = yearMonth ? getSundaysPresentCount(yearMonth, absentSet) : 0;
+  const absentSet = new Set(effectiveAbsentDates);
+  const sundayRate = employee.works_sundays ? (Number(employee.sunday_rate) || 0) : 0;
+  const sundaysPresentCount = (yearMonth && employee.works_sundays) ? getSundaysPresentCount(yearMonth, absentSet) : 0;
   const sundayBonus = sundayRate * sundaysPresentCount;
 
   // Deductions calculation
@@ -107,10 +146,13 @@ export function calculateSalary(employee, absentDates, totalDays, yearMonth, ded
 
   return {
     absentCount,
-    presentCount,
-    totalDays,
+    potentialWorkingDays,
+    foodProvidedDays,
     foodEarned,
     foodCut,
+    lastMondayFoodCut,
+    nonWorkingSundayFoodCut,
+    lastMonday,
     sundayRate,
     sundaysPresentCount,
     sundayBonus,
@@ -119,7 +161,7 @@ export function calculateSalary(employee, absentDates, totalDays, yearMonth, ded
     goodsDeductions,
     deductions,
     netPayable,
-    absentDates: absentDates.sort(),
+    absentDates: effectiveAbsentDates.sort(),
   };
 }
 

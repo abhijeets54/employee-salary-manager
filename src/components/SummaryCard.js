@@ -34,7 +34,7 @@ export function SummaryCardWithData({ employee, absentDates, month, deductions =
         </div>
         <div className="flex-between">
           <p className="small muted" style={{ margin: 0 }}>
-            {summary.presentCount} present · {summary.absentCount} absent · {totalDays} days
+            {summary.foodProvidedDays} days food credited · {summary.absentCount} absences
           </p>
           <p className="small muted" style={{ margin: 0 }}>
             to be paid
@@ -51,7 +51,7 @@ export function SummaryCardWithData({ employee, absentDates, month, deductions =
         <div className="summary-row">
           <span className="muted">Food allowance</span>
           <span className="muted small">
-            {formatINR(employee.food_allowance)}/day × {summary.presentCount} days
+            {formatINR(employee.food_allowance)}/day × {summary.foodProvidedDays} days
           </span>
         </div>
         <div className="summary-row">
@@ -77,18 +77,6 @@ export function SummaryCardWithData({ employee, absentDates, month, deductions =
               </span>
             </div>
           </>
-        )}
-
-        {/* Absent food cut */}
-        {summary.absentCount > 0 && (
-          <div className="summary-row">
-            <span className="coral-text">
-              Food cut ({summary.absentCount} day{summary.absentCount !== 1 ? 's' : ''})
-            </span>
-            <span className="coral-text" style={{ fontWeight: 500 }}>
-              −{formatINR(summary.foodCut)}
-            </span>
-          </div>
         )}
 
         {/* Deductions */}

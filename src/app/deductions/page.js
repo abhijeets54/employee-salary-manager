@@ -6,15 +6,14 @@ import { useRouter } from 'next/navigation';
 import {
   getCurrentMonth,
   shiftMonth,
-  getDaysInMonth,
-  formatINR,
-  formatDate,
   pad,
+  formatDate,
+  formatINR,
 } from '@/lib/helpers';
 import Navbar from '@/components/Navbar';
 import MonthNav from '@/components/MonthNav';
-import DeductionModal from '@/components/DeductionModal';
 import EmptyState from '@/components/EmptyState';
+import DeductionModal from '@/components/DeductionModal';
 
 export default function DeductionsPage() {
   const [employees, setEmployees] = useState([]);
@@ -22,7 +21,7 @@ export default function DeductionsPage() {
   const [deductionMap, setDeductionMap] = useState({}); // { empId: [{ id, amount, reason, type, deduction_date }] }
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState(null);
-  const [modalEmployee, setModalEmployee] = useState(null); // employee object or null
+  const [modalEmployee, setModalEmployee] = useState(null);
   const router = useRouter();
 
   // Auth check
@@ -115,7 +114,6 @@ export default function DeductionsPage() {
     );
   }
 
-  // Grand total of all deductions this month
   const grandTotal = employees.reduce((sum, emp) => {
     const entries = deductionMap[emp.id] || [];
     return sum + entries.reduce((s, d) => s + Number(d.amount), 0);
@@ -123,7 +121,7 @@ export default function DeductionsPage() {
 
   return (
     <div className="app-shell">
-      <Navbar />
+      <Navbar employees={employees} />
       <div className="app-content page-enter">
         <h1 className="page-title">Deductions</h1>
         <p className="page-subtitle">
@@ -137,10 +135,9 @@ export default function DeductionsPage() {
             <div className="spinner"></div>
           </div>
         ) : employees.length === 0 ? (
-          <EmptyState icon="🧾" message="Add employees first from the Employees tab." />
+          <EmptyState icon="📝" message="No employees added yet." />
         ) : (
           <>
-            {/* Total deductions this month */}
             {grandTotal > 0 && (
               <div className="deductions-total-banner">
                 <span className="muted" style={{ fontSize: '13px' }}>Total deductions this month</span>

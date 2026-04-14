@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useRouter } from 'next/navigation';
 import {
   getCurrentMonth,
   shiftMonth,
@@ -11,6 +10,7 @@ import {
   calculateSalary,
   pad,
 } from '@/lib/helpers';
+import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import MonthNav from '@/components/MonthNav';
 import { SummaryCardWithData } from '@/components/SummaryCard';
@@ -130,7 +130,7 @@ export default function SummaryPage() {
 
   return (
     <div className="app-shell">
-      <Navbar />
+      <Navbar employees={employees} />
       <div className="app-content page-enter">
         <h1 className="page-title">Salary Summary</h1>
         <p className="page-subtitle">

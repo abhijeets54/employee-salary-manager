@@ -1,6 +1,6 @@
 'use client';
 
-import { getDaysInMonth, getDayAbbrev, pad } from '@/lib/helpers';
+import { getDaysInMonth, getDayAbbrev, pad, getLastMonday } from '@/lib/helpers';
 import { supabase } from '@/lib/supabase';
 
 const WEEKDAY_HEADERS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
@@ -14,8 +14,10 @@ export default function AttendanceGrid({ employees, month, absentMap, setAbsentM
   const todayStr = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
 
   // Calculate what day of week the 1st falls on (0=Mon ... 6=Sun for our grid)
+  // Calculate what day of week the 1st falls on (0=Mon ... 6=Sun for our grid)
   const [yearNum, monthNum] = month.split('-').map(Number);
   const firstDayOfWeek = (new Date(yearNum, monthNum - 1, 1).getDay() + 6) % 7; // 0=Mon
+  const lastMondayStr = getLastMonday(month);
 
   const toggleAbsent = async (employeeId, dateStr) => {
     const currentAbsent = absentMap[employeeId] || new Set();
@@ -75,23 +77,32 @@ export default function AttendanceGrid({ employees, month, absentMap, setAbsentM
                     <td className={`name-cell ${rowClass}`}>{emp.name}</td>
                     {dayNums.map((d) => {
                       const ds = `${month}-${pad(d)}`;
-                      const isFuture = ds > todayStr;
+                      const isClosedDay = ds === lastMondayStr;
+                      const isFuture = ds > todayStr && !isClosedDay;
                       const ab = abSet.has(ds);
+                      
+                      let stateClass = 'present';
+                      if (isClosedDay) stateClass = 'closed';
+                      else if (isFuture) stateClass = 'future';
+                      else if (ab) stateClass = 'absent';
+                      
                       return (
                         <td key={d} className="day-cell">
                           <button
-                            className={`day-btn ${isFuture ? 'future' : ab ? 'absent' : 'present'}`}
-                            onClick={() => !isFuture && toggleAbsent(emp.id, ds)}
+                            className={`day-btn ${stateClass}`}
+                            onClick={() => !isFuture && !isClosedDay && toggleAbsent(emp.id, ds)}
                             title={
-                              isFuture
-                                ? 'Future date'
-                                : ab
-                                ? 'Absent – click to undo'
-                                : 'Present – click to mark absent'
+                              isClosedDay 
+                                ? 'Closed (Last Monday)'
+                                : isFuture
+                                  ? 'Future date'
+                                  : ab
+                                  ? 'Absent – click to undo'
+                                  : 'Present – click to mark absent'
                             }
-                            disabled={isFuture}
+                            disabled={isFuture || isClosedDay}
                           >
-                            {isFuture ? '·' : ab ? 'A' : '·'}
+                            {isClosedDay ? '⛔' : isFuture ? '·' : ab ? 'A' : '·'}
                           </button>
                         </td>
                       );
@@ -152,21 +163,23 @@ export default function AttendanceGrid({ employees, month, absentMap, setAbsentM
                 {/* Day buttons */}
                 {dayNums.map((d) => {
                   const ds = `${month}-${pad(d)}`;
-                  const isFuture = ds > todayStr;
+                  const isClosedDay = ds === lastMondayStr;
+                  const isFuture = ds > todayStr && !isClosedDay;
                   const ab = abSet.has(ds);
-                  const stateClass = isFuture
-                    ? 'future'
-                    : ab
-                    ? 'absent'
-                    : 'present';
+                  
+                  let stateClass = 'present';
+                  if (isClosedDay) stateClass = 'closed';
+                  else if (isFuture) stateClass = 'future';
+                  else if (ab) stateClass = 'absent';
 
                   return (
                     <button
                       key={d}
                       className={`day-btn-mobile ${stateClass}`}
-                      onClick={() => !isFuture && toggleAbsent(emp.id, ds)}
-                      disabled={isFuture}
-                      aria-label={`Day ${d}: ${isFuture ? 'future' : ab ? 'absent' : 'present'}`}
+                      onClick={() => !isFuture && !isClosedDay && toggleAbsent(emp.id, ds)}
+                      disabled={isFuture || isClosedDay}
+                      aria-label={`Day ${d}: ${isClosedDay ? 'closed' : isFuture ? 'future' : ab ? 'absent' : 'present'}`}
+                      title={isClosedDay ? 'Closed (Last Monday)' : ''}
                     >
                       {d}
                     </button>

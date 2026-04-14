@@ -7,6 +7,8 @@ export default function EmployeeForm({ onAdd, onClose }) {
   const [name, setName] = useState('');
   const [salary, setSalary] = useState('');
   const [food, setFood] = useState('');
+  const [role, setRole] = useState('helper');
+  const [worksSundays, setWorksSundays] = useState(false);
   const [sundayRate, setSundayRate] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -20,9 +22,11 @@ export default function EmployeeForm({ onAdd, onClose }) {
       .from('employees')
       .insert({
         name: name.trim(),
+        role,
         salary: Number(salary),
         food_allowance: Number(food),
-        sunday_rate: Number(sundayRate) || 0,
+        works_sundays: worksSundays,
+        sunday_rate: worksSundays ? (Number(sundayRate) || 0) : 0,
       })
       .select()
       .single();
@@ -32,6 +36,8 @@ export default function EmployeeForm({ onAdd, onClose }) {
       setName('');
       setSalary('');
       setFood('');
+      setRole('helper');
+      setWorksSundays(false);
       setSundayRate('');
     }
     setSaving(false);
@@ -52,6 +58,27 @@ export default function EmployeeForm({ onAdd, onClose }) {
         autoFocus
         autoComplete="off"
       />
+      
+      <div style={{ marginBottom: '16px' }}>
+        <label className="field-label" style={{ marginBottom: '8px' }}>Role</label>
+        <div className="deduction-type-toggle" style={{ marginBottom: 0 }}>
+          <button
+            className={`type-btn ${role === 'main' ? 'active' : ''}`}
+            onClick={() => setRole('main')}
+            style={{ padding: '8px 12px', minHeight: '38px' }}
+          >
+            👤 Main Worker
+          </button>
+          <button
+            className={`type-btn ${role === 'helper' ? 'active' : ''}`}
+            onClick={() => setRole('helper')}
+            style={{ padding: '8px 12px', minHeight: '38px' }}
+          >
+            🛠️ Helper
+          </button>
+        </div>
+      </div>
+
       <div className="grid-2" style={{ marginBottom: '12px' }}>
         <div>
           <label className="field-label">Fixed salary (₹/month)</label>
@@ -77,15 +104,25 @@ export default function EmployeeForm({ onAdd, onClose }) {
         </div>
       </div>
       <div style={{ marginBottom: '1rem' }}>
-        <label className="field-label">Sunday bonus (₹/Sunday) — leave empty if none</label>
-        <input
-          type="text"
-          inputMode="numeric"
-          pattern="[0-9]*"
-          value={sundayRate}
-          onChange={(e) => setSundayRate(e.target.value.replace(/[^0-9]/g, ''))}
-          placeholder="e.g. 700 (0 = no Sunday bonus)"
-        />
+        <label className="field-label" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginBottom: worksSundays ? '12px' : 0 }}>
+          <input 
+            type="checkbox" 
+            checked={worksSundays} 
+            onChange={(e) => setWorksSundays(e.target.checked)} 
+            style={{ width: '18px', minHeight: '18px', margin: 0 }}
+          />
+          Works on Sundays?
+        </label>
+        {worksSundays && (
+          <input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            value={sundayRate}
+            onChange={(e) => setSundayRate(e.target.value.replace(/[^0-9]/g, ''))}
+            placeholder="Sunday bonus (e.g. 700)"
+          />
+        )}
       </div>
       <div style={{ display: 'flex', gap: '8px' }}>
         <button className="btn" style={{ flex: 1 }} onClick={onClose} disabled={saving}>

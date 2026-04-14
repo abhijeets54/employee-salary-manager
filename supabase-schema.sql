@@ -7,8 +7,10 @@
 CREATE TABLE employees (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'helper' CHECK (role IN ('main', 'helper')),
   salary NUMERIC NOT NULL,
   food_allowance NUMERIC NOT NULL,
+  works_sundays BOOLEAN NOT NULL DEFAULT false,
   sunday_rate NUMERIC NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()

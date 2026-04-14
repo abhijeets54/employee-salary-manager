@@ -1,9 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { useRouter } from 'next/navigation';
+import Sidebar from '@/components/Sidebar';
 
 const tabs = [
   { href: '/', label: 'Employees', icon: '👥' },
@@ -12,9 +13,10 @@ const tabs = [
   { href: '/summary', label: 'Summary', icon: '💰' },
 ];
 
-export default function Navbar() {
+export default function Navbar({ employees = [] }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = async () => {
     if (!confirm('Logout?')) return;
@@ -27,9 +29,12 @@ export default function Navbar() {
       {/* ── Top bar (always visible) ── */}
       <nav className="navbar">
         <div className="navbar-inner">
+          <button className="nav-hamburger" onClick={() => setSidebarOpen(true)}>
+            ☰
+          </button>
           <div className="navbar-brand">
             <div className="navbar-brand-icon">S</div>
-            <span>Salary Manager</span>
+            <span style={{ display: 'none', '@media(min-width: 480px)': { display: 'inline' }}}>Salary Manager</span>
           </div>
 
           {/* Desktop tabs (hidden on mobile) */}
@@ -51,6 +56,13 @@ export default function Navbar() {
           </button>
         </div>
       </nav>
+
+      {/* ── Sidebar Drawer ── */}
+      <Sidebar 
+        employees={employees} 
+        isOpen={sidebarOpen} 
+        onClose={() => setSidebarOpen(false)} 
+      />
 
       {/* ── Bottom tab bar (mobile only) ── */}
       <nav className="bottom-tabs" aria-label="Main navigation">

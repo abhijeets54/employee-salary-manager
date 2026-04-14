@@ -89,7 +89,7 @@ export default function AttendancePage() {
 
   return (
     <div className="app-shell">
-      <Navbar />
+      <Navbar employees={employees} />
       <div className="app-content page-enter">
         <h1 className="page-title">Attendance</h1>
         <p className="page-subtitle">
@@ -103,10 +103,7 @@ export default function AttendancePage() {
             <div className="spinner"></div>
           </div>
         ) : employees.length === 0 ? (
-          <EmptyState
-            icon="📋"
-            message="Add employees first from the Employees tab."
-          />
+          <EmptyState icon="📝" message="No employees added yet." />
         ) : (
           <AttendanceGrid
             employees={employees}
