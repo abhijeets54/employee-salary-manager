@@ -59,14 +59,51 @@ export function shiftMonth(yearMonth, delta) {
 }
 
 /**
- * Calculate salary breakdown for an employee in a given month.
+ * Get all Sunday date strings in a month: ["2026-04-06", "2026-04-13", ...]
  */
-export function calculateSalary(employee, absentDates, totalDays) {
+export function getSundayDates(yearMonth) {
+  const [y, m] = yearMonth.split('-').map(Number);
+  const totalDays = new Date(y, m, 0).getDate();
+  const sundays = [];
+  for (let d = 1; d <= totalDays; d++) {
+    if (new Date(y, m - 1, d).getDay() === 0) {
+      sundays.push(`${yearMonth}-${pad(d)}`);
+    }
+  }
+  return sundays;
+}
+
+/**
+ * Count Sundays an employee was present in a month.
+ * absentSet is a Set<'YYYY-MM-DD'>
+ */
+export function getSundaysPresentCount(yearMonth, absentSet) {
+  const sundays = getSundayDates(yearMonth);
+  return sundays.filter((d) => !absentSet.has(d)).length;
+}
+
+/**
+ * Calculate salary breakdown for an employee in a given month.
+ * deductions = [{ amount, reason, type, deduction_date }, ...]
+ */
+export function calculateSalary(employee, absentDates, totalDays, yearMonth, deductions = []) {
   const absentCount = absentDates.length;
   const presentCount = totalDays - absentCount;
   const foodEarned = employee.food_allowance * presentCount;
   const foodCut = employee.food_allowance * absentCount;
-  const netPayable = employee.salary + foodEarned;
+
+  // Sunday bonus calculation
+  const absentSet = new Set(absentDates);
+  const sundayRate = Number(employee.sunday_rate) || 0;
+  const sundaysPresentCount = yearMonth ? getSundaysPresentCount(yearMonth, absentSet) : 0;
+  const sundayBonus = sundayRate * sundaysPresentCount;
+
+  // Deductions calculation
+  const totalDeductions = deductions.reduce((sum, d) => sum + Number(d.amount), 0);
+  const cashDeductions = deductions.filter((d) => d.type === 'cash').reduce((sum, d) => sum + Number(d.amount), 0);
+  const goodsDeductions = deductions.filter((d) => d.type === 'goods').reduce((sum, d) => sum + Number(d.amount), 0);
+
+  const netPayable = employee.salary + foodEarned + sundayBonus - totalDeductions;
 
   return {
     absentCount,
@@ -74,6 +111,13 @@ export function calculateSalary(employee, absentDates, totalDays) {
     totalDays,
     foodEarned,
     foodCut,
+    sundayRate,
+    sundaysPresentCount,
+    sundayBonus,
+    totalDeductions,
+    cashDeductions,
+    goodsDeductions,
+    deductions,
     netPayable,
     absentDates: absentDates.sort(),
   };
@@ -88,4 +132,23 @@ export function formatAbsentDate(dateStr) {
     month: 'short',
   });
   return `${d} ${monthStr}`;
+}
+
+/**
+ * Format a date string "2026-04-05" → "5 Apr 2026"
+ */
+export function formatDate(dateStr) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const monthStr = new Date(y, m - 1, 1).toLocaleString('en-IN', {
+    month: 'short',
+  });
+  return `${d} ${monthStr} ${y}`;
+}
+
+/**
+ * Get today as "YYYY-MM-DD"
+ */
+export function getTodayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }

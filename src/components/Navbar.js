@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 const tabs = [
   { href: '/', label: 'Employees', icon: '👥' },
   { href: '/attendance', label: 'Attendance', icon: '📋' },
+  { href: '/deductions', label: 'Deductions', icon: '🧾' },
   { href: '/summary', label: 'Summary', icon: '💰' },
 ];
 

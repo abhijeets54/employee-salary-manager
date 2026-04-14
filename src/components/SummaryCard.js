@@ -8,9 +8,9 @@ export default function SummaryCard({ employee, absentDates }) {
   return null;
 }
 
-export function SummaryCardWithData({ employee, absentDates, month }) {
+export function SummaryCardWithData({ employee, absentDates, month, deductions = [] }) {
   const totalDays = getDaysInMonth(month);
-  const summary = calculateSalary(employee, absentDates, totalDays);
+  const summary = calculateSalary(employee, absentDates, totalDays, month, deductions);
 
   return (
     <div className="card page-enter" style={{ marginBottom: '16px' }}>
@@ -24,7 +24,7 @@ export function SummaryCardWithData({ employee, absentDates, month }) {
             style={{
               fontSize: '1.35rem',
               fontWeight: 700,
-              color: 'var(--teal)',
+              color: summary.netPayable >= 0 ? 'var(--teal)' : 'var(--coral)',
               margin: 0,
               letterSpacing: '-0.02em',
             }}
@@ -59,6 +59,27 @@ export function SummaryCardWithData({ employee, absentDates, month }) {
           <span style={{ fontWeight: 500 }}>{formatINR(summary.foodEarned)}</span>
         </div>
 
+        {/* Sunday bonus */}
+        {summary.sundayRate > 0 && (
+          <>
+            <div className="summary-row">
+              <span className="teal-text">
+                Sunday bonus
+              </span>
+              <span className="muted small">
+                {formatINR(summary.sundayRate)}/Sun × {summary.sundaysPresentCount} Sundays
+              </span>
+            </div>
+            <div className="summary-row">
+              <span className="teal-text indent">= Sunday earned</span>
+              <span className="teal-text" style={{ fontWeight: 500 }}>
+                +{formatINR(summary.sundayBonus)}
+              </span>
+            </div>
+          </>
+        )}
+
+        {/* Absent food cut */}
         {summary.absentCount > 0 && (
           <div className="summary-row">
             <span className="coral-text">
@@ -70,13 +91,35 @@ export function SummaryCardWithData({ employee, absentDates, month }) {
           </div>
         )}
 
+        {/* Deductions */}
+        {summary.totalDeductions > 0 && (
+          <>
+            {summary.cashDeductions > 0 && (
+              <div className="summary-row">
+                <span className="coral-text">💵 Cash taken</span>
+                <span className="coral-text" style={{ fontWeight: 500 }}>
+                  −{formatINR(summary.cashDeductions)}
+                </span>
+              </div>
+            )}
+            {summary.goodsDeductions > 0 && (
+              <div className="summary-row">
+                <span className="coral-text">📦 Goods taken</span>
+                <span className="coral-text" style={{ fontWeight: 500 }}>
+                  −{formatINR(summary.goodsDeductions)}
+                </span>
+              </div>
+            )}
+          </>
+        )}
+
         <div className="summary-total-row">
           <span style={{ fontWeight: 600, fontSize: '15px' }}>Net payable</span>
           <span
             style={{
               fontWeight: 700,
               fontSize: '1.15rem',
-              color: 'var(--teal)',
+              color: summary.netPayable >= 0 ? 'var(--teal)' : 'var(--coral)',
             }}
           >
             {formatINR(summary.netPayable)}
@@ -89,6 +132,20 @@ export function SummaryCardWithData({ employee, absentDates, month }) {
         <div className="absent-notice">
           <strong>Absent on:</strong>{' '}
           {summary.absentDates.map((d) => formatAbsentDate(d)).join(', ')}
+        </div>
+      )}
+
+      {/* Deduction details */}
+      {deductions.length > 0 && (
+        <div className="deduction-notice">
+          <strong>Deductions:</strong>
+          {deductions.map((d, i) => (
+            <span key={d.id || i} className="deduction-detail-item">
+              {' '}{d.type === 'cash' ? '💵' : '📦'} {formatINR(d.amount)}
+              {d.reason ? ` (${d.reason})` : ''}
+              {i < deductions.length - 1 ? ',' : ''}
+            </span>
+          ))}
         </div>
       )}
     </div>

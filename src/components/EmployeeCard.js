@@ -9,6 +9,7 @@ export default function EmployeeCard({ employee, onUpdate, onDelete }) {
   const [name, setName] = useState(employee.name);
   const [salary, setSalary] = useState(String(employee.salary));
   const [food, setFood] = useState(String(employee.food_allowance));
+  const [sundayRate, setSundayRate] = useState(String(employee.sunday_rate || 0));
   const [saving, setSaving] = useState(false);
 
   const valid = name.trim() && salary && food && Number(salary) > 0 && Number(food) >= 0;
@@ -22,19 +23,26 @@ export default function EmployeeCard({ employee, onUpdate, onDelete }) {
         name: name.trim(),
         salary: Number(salary),
         food_allowance: Number(food),
+        sunday_rate: Number(sundayRate) || 0,
         updated_at: new Date().toISOString(),
       })
       .eq('id', employee.id);
 
     if (!error) {
-      onUpdate({ ...employee, name: name.trim(), salary: Number(salary), food_allowance: Number(food) });
+      onUpdate({
+        ...employee,
+        name: name.trim(),
+        salary: Number(salary),
+        food_allowance: Number(food),
+        sunday_rate: Number(sundayRate) || 0,
+      });
       setEditing(false);
     }
     setSaving(false);
   };
 
   const handleDelete = async () => {
-    if (!confirm(`Remove ${employee.name}?\n\nThis will also delete all their attendance records.`)) return;
+    if (!confirm(`Remove ${employee.name}?\n\nThis will also delete all their attendance and deduction records.`)) return;
     const { error } = await supabase.from('employees').delete().eq('id', employee.id);
     if (!error) onDelete(employee.id);
   };
@@ -43,8 +51,11 @@ export default function EmployeeCard({ employee, onUpdate, onDelete }) {
     setName(employee.name);
     setSalary(String(employee.salary));
     setFood(String(employee.food_allowance));
+    setSundayRate(String(employee.sunday_rate || 0));
     setEditing(false);
   };
+
+  const sRate = Number(employee.sunday_rate) || 0;
 
   if (editing) {
     return (
@@ -60,7 +71,7 @@ export default function EmployeeCard({ employee, onUpdate, onDelete }) {
           placeholder="Employee name"
           style={{ marginBottom: '12px' }}
         />
-        <div className="grid-2" style={{ marginBottom: '1rem' }}>
+        <div className="grid-2" style={{ marginBottom: '12px' }}>
           <div>
             <label className="field-label">Fixed salary (₹/month)</label>
             <input
@@ -84,6 +95,17 @@ export default function EmployeeCard({ employee, onUpdate, onDelete }) {
             />
           </div>
         </div>
+        <div style={{ marginBottom: '1rem' }}>
+          <label className="field-label">Sunday bonus (₹/Sunday)</label>
+          <input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            value={sundayRate}
+            onChange={(e) => setSundayRate(e.target.value.replace(/[^0-9]/g, ''))}
+            placeholder="0 = no Sunday bonus"
+          />
+        </div>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button className="btn" style={{ flex: 1 }} onClick={handleCancel} disabled={saving}>
             Cancel
@@ -104,6 +126,9 @@ export default function EmployeeCard({ employee, onUpdate, onDelete }) {
         </p>
         <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 0 }}>
           {formatINR(employee.salary)}/month &nbsp;·&nbsp; {formatINR(employee.food_allowance)}/day food
+          {sRate > 0 && (
+            <> &nbsp;·&nbsp; <span style={{ color: 'var(--teal)' }}>{formatINR(sRate)}/Sun</span></>
+          )}
         </p>
       </div>
       <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>

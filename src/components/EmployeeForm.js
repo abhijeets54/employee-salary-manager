@@ -7,6 +7,7 @@ export default function EmployeeForm({ onAdd, onClose }) {
   const [name, setName] = useState('');
   const [salary, setSalary] = useState('');
   const [food, setFood] = useState('');
+  const [sundayRate, setSundayRate] = useState('');
   const [saving, setSaving] = useState(false);
 
   const valid = name.trim() && salary && food && Number(salary) > 0 && Number(food) >= 0;
@@ -21,6 +22,7 @@ export default function EmployeeForm({ onAdd, onClose }) {
         name: name.trim(),
         salary: Number(salary),
         food_allowance: Number(food),
+        sunday_rate: Number(sundayRate) || 0,
       })
       .select()
       .single();
@@ -30,6 +32,7 @@ export default function EmployeeForm({ onAdd, onClose }) {
       setName('');
       setSalary('');
       setFood('');
+      setSundayRate('');
     }
     setSaving(false);
   };
@@ -49,7 +52,7 @@ export default function EmployeeForm({ onAdd, onClose }) {
         autoFocus
         autoComplete="off"
       />
-      <div className="grid-2" style={{ marginBottom: '1rem' }}>
+      <div className="grid-2" style={{ marginBottom: '12px' }}>
         <div>
           <label className="field-label">Fixed salary (₹/month)</label>
           <input
@@ -72,6 +75,17 @@ export default function EmployeeForm({ onAdd, onClose }) {
             placeholder="e.g. 100"
           />
         </div>
+      </div>
+      <div style={{ marginBottom: '1rem' }}>
+        <label className="field-label">Sunday bonus (₹/Sunday) — leave empty if none</label>
+        <input
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          value={sundayRate}
+          onChange={(e) => setSundayRate(e.target.value.replace(/[^0-9]/g, ''))}
+          placeholder="e.g. 700 (0 = no Sunday bonus)"
+        />
       </div>
       <div style={{ display: 'flex', gap: '8px' }}>
         <button className="btn" style={{ flex: 1 }} onClick={onClose} disabled={saving}>

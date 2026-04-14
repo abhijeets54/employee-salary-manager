@@ -20,6 +20,7 @@ export default function SummaryPage() {
   const [employees, setEmployees] = useState([]);
   const [month, setMonth] = useState(getCurrentMonth());
   const [absentMap, setAbsentMap] = useState({}); // { empId: ['2026-04-05', ...] }
+  const [deductionMap, setDeductionMap] = useState({}); // { empId: [{ amount, reason, type, ... }] }
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState(null);
   const router = useRouter();
@@ -71,6 +72,30 @@ export default function SummaryPage() {
       });
       setAbsentMap(map);
     }
+  }, [month]);
+
+  // Fetch deductions for the current month
+  const fetchDeductions = useCallback(async () => {
+    const [y, m] = month.split('-').map(Number);
+    const startDate = `${month}-01`;
+    const lastDay = new Date(y, m, 0).getDate();
+    const endDate = `${month}-${pad(lastDay)}`;
+
+    const { data } = await supabase
+      .from('deductions')
+      .select('*')
+      .gte('deduction_date', startDate)
+      .lte('deduction_date', endDate)
+      .order('deduction_date', { ascending: true });
+
+    if (data) {
+      const map = {};
+      data.forEach((row) => {
+        if (!map[row.employee_id]) map[row.employee_id] = [];
+        map[row.employee_id].push(row);
+      });
+      setDeductionMap(map);
+    }
     setLoading(false);
   }, [month]);
 
@@ -79,8 +104,9 @@ export default function SummaryPage() {
       setLoading(true);
       fetchEmployees();
       fetchAttendance();
+      fetchDeductions();
     }
-  }, [session, fetchEmployees, fetchAttendance]);
+  }, [session, fetchEmployees, fetchAttendance, fetchDeductions]);
 
   const handleShift = (delta) => {
     setMonth((prev) => shiftMonth(prev, delta));
@@ -89,7 +115,8 @@ export default function SummaryPage() {
   const totalDays = getDaysInMonth(month);
   const grandTotal = employees.reduce((sum, emp) => {
     const absentDates = absentMap[emp.id] || [];
-    const summary = calculateSalary(emp, absentDates, totalDays);
+    const empDeductions = deductionMap[emp.id] || [];
+    const summary = calculateSalary(emp, absentDates, totalDays, month, empDeductions);
     return sum + summary.netPayable;
   }, 0);
 
@@ -162,6 +189,7 @@ export default function SummaryPage() {
                 employee={emp}
                 absentDates={absentMap[emp.id] || []}
                 month={month}
+                deductions={deductionMap[emp.id] || []}
               />
             ))}
           </>
