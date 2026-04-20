@@ -48,6 +48,14 @@ export function SummaryCardWithData({ employee, absentDates, month, deductions =
           <span className="muted">Fixed salary</span>
           <span style={{ fontWeight: 500 }}>{formatINR(employee.salary)}</span>
         </div>
+        {summary.fixedSalaryDeduction > 0 && (
+          <div className="summary-row">
+            <span className="coral-text indent">− Absent cut ({summary.absentCount} days)</span>
+            <span className="coral-text" style={{ fontWeight: 500 }}>
+              −{formatINR(summary.fixedSalaryDeduction)}
+            </span>
+          </div>
+        )}
         <div className="summary-row">
           <span className="muted">Food allowance</span>
           <span className="muted small">

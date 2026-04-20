@@ -142,7 +142,10 @@ export function calculateSalary(employee, absentDates, totalDays, yearMonth, ded
   const cashDeductions = deductions.filter((d) => d.type === 'cash').reduce((sum, d) => sum + Number(d.amount), 0);
   const goodsDeductions = deductions.filter((d) => d.type === 'goods').reduce((sum, d) => sum + Number(d.amount), 0);
 
-  const netPayable = employee.salary + foodEarned + sundayBonus - totalDeductions;
+  // User requirement: Always calculate absent day fixed salary deduction as (salary / 30)
+  const fixedSalaryDeduction = (employee.salary / 30) * absentCount;
+
+  const netPayable = employee.salary - fixedSalaryDeduction + foodEarned + sundayBonus - totalDeductions;
 
   return {
     absentCount,
@@ -160,6 +163,7 @@ export function calculateSalary(employee, absentDates, totalDays, yearMonth, ded
     cashDeductions,
     goodsDeductions,
     deductions,
+    fixedSalaryDeduction,
     netPayable,
     absentDates: effectiveAbsentDates.sort(),
   };

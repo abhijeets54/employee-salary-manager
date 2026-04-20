@@ -43,21 +43,21 @@ export default function ProfilePage() {
   useEffect(() => {
     if (!id || !month) return;
     const fetchRecords = async () => {
-      // 1. Fetch attendance
-      const { data: attData } = await supabase
-        .from('attendance')
-        .select('absent_date')
-        .eq('employee_id', id)
-        .like('absent_date', `${month}-%`);
-      
-      const abSet = new Set((attData || []).map(a => a.absent_date));
-      setAbsentMap({ [id]: abSet });
-      
-      // 2. Fetch deductions
       const [y, m] = month.split('-').map(Number);
       const startDate = `${month}-01`;
       const lastDay = new Date(y, m, 0).getDate();
       const endDate = `${month}-${pad(lastDay)}`;
+
+      // 1. Fetch attendance (use date range, not LIKE — LIKE doesn't work on DATE columns)
+      const { data: attData } = await supabase
+        .from('attendance')
+        .select('absent_date')
+        .eq('employee_id', id)
+        .gte('absent_date', startDate)
+        .lte('absent_date', endDate);
+      
+      const abSet = new Set((attData || []).map(a => a.absent_date));
+      setAbsentMap({ [id]: abSet });
   
       const { data: dedData } = await supabase
         .from('deductions')
@@ -113,7 +113,7 @@ export default function ProfilePage() {
         
         <SummaryCardWithData
             employee={employee}
-            absentDates={Array.from(absentMap[employee.id] || [])}
+            absentDates={Array.from(absentMap[employee.id] || new Set())}
             month={month}
             deductions={deductions}
         />
