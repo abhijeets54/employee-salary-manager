@@ -62,6 +62,14 @@ export function SummaryCardWithData({ employee, absentDates, month, deductions =
             {formatINR(employee.food_allowance)}/day × {summary.foodProvidedDays} days
           </span>
         </div>
+        {summary.lastMonday && (
+          <div className="summary-row" style={{ marginTop: '-4px', marginBottom: '4px' }}>
+            <span className="muted small indent" style={{ fontSize: '0.8rem', opacity: 0.8 }}>
+              * Excludes closed Last Monday
+            </span>
+            <span></span>
+          </div>
+        )}
         <div className="summary-row">
           <span className="muted indent">= Food earned</span>
           <span style={{ fontWeight: 500 }}>{formatINR(summary.foodEarned)}</span>
